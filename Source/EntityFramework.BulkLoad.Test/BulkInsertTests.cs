@@ -2,7 +2,7 @@
 {
     using System.Collections.Generic;
     using System.Data.Entity;
-    using System.Data.Entity.Migrations.History;
+    using System.Linq;
 
     using EntityFramework.BulkLoad.Test.Model;
 
@@ -15,6 +15,12 @@
     [TestClass]
     public class BulkInsertTests
     {
+        #region Static Fields
+
+        private static string connectionString;
+
+        #endregion
+
         #region Public Properties
 
         public TestContext TestContext { get; set; }
@@ -26,35 +32,32 @@
         [ClassInitialize]
         public static void ClassInitialize(TestContext testContext)
         {
-            DeploySampleDatabase(testContext);
+            connectionString = SqlTestUtils.CreateLocalDbConnectionString(testContext);
+            DeploySampleDatabase(connectionString);
         }
 
         [TestMethod]
         public void BulkInsertTest()
         {
-            string connectionString = GetConnectionString();
-
             var fixture = new Fixture();
 
             IEnumerable<SampleEntity> entities = fixture.CreateMany<SampleEntity>(2);
 
             var loader = new EntityBulkLoader(connectionString);
-            loader.BulkInsert(entities, "SampleEntity", new SampleContext(connectionString));
+            loader.BulkInsert(entities, new SampleContext(connectionString));
 
-            VerifyEntitiesWereInserted(entities);
+            this.VerifyEntitiesWereInserted(entities);
         }
 
         #endregion
 
         #region Methods
 
-        private static void DeploySampleDatabase(TestContext testContext)
+        private static void DeploySampleDatabase(string destinationConnectionString)
         {
-            Database.SetInitializer(new DropCreateDatabaseAlways<SampleContext>());
+            Database.SetInitializer(new CreateDatabaseIfNotExists<SampleContext>());
 
-            string connectionString = SqlTestUtils.CreateConnectionString(testContext);
-
-            using (var context = new SampleContext(connectionString))
+            using (var context = new SampleContext(destinationConnectionString))
             {
                 context.SampleEntities.Load();
             }
@@ -62,15 +65,15 @@
 
         private void VerifyEntitiesWereInserted(IEnumerable<SampleEntity> expectedEntities)
         {
-            using (var context = new SampleContext(this.GetConnectionString()))
+            using (var context = new SampleContext(connectionString))
             {
-                context.SampleEntities.Should().Contain(expectedEntities);
-            }
-        }
+                List<SampleEntity> actualEntities = context.SampleEntities.ToList();
 
-        private string GetConnectionString()
-        {
-            return SqlTestUtils.CreateConnectionString(this.TestContext);
+                actualEntities.Should().NotBeEmpty().And.HaveCount(expectedEntities.Count());
+
+                //actualEntities.ShouldAllBeEquivalentTo(expectedEntities, options => options
+                //    .Using<SampleEntity>(c => c.Subject.DateTime.Should().BeCloseTo(c.Subject.DateTime, 1000)));
+            }
         }
 
         #endregion
