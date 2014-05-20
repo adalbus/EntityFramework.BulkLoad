@@ -48,7 +48,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EntityBulkLoader.cs" />
+    <Compile Include="EntityBulkLoadSettings.cs" />
     <Compile Include="EntityDataReader.cs" />
+    <Compile Include="EntityDataReaderExtensions.cs" />
+    <Compile Include="EntityDataReaderOptions.cs" />
+    <Compile Include="IDataLoader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Reflect.cs" />
   </ItemGroup>

@@ -13,7 +13,6 @@
     using System.Reflection.Emit;
 
     public class EntityDataReader<T> : IDataReader
-        where T : class
     {
         #region Fields
 
